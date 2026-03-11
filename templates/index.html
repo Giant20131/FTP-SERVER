@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FTP Files</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <h1>Uploaded Files</h1>
+    <a class="ghost" href="{{ url_for('logout') }}">Logout</a>
+  </header>
+
+  <section class="uploader">
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <label>
+        <span>Select File</span>
+        <input type="file" name="file" required />
+      </label>
+      <label>
+        <span>Description (optional)</span>
+        <input name="description" placeholder="What is this file for?" />
+      </label>
+      <button type="submit">Upload</button>
+    </form>
+  </section>
+
+  <section class="filters">
+    <form method="get" class="form-grid">
+      <label>
+        <span>Search</span>
+        <input name="q" placeholder="Search by name, path, or description" value="{{ q }}" />
+      </label>
+
+      <label>
+        <span>Extension</span>
+        <select name="ext">
+          <option value="">All</option>
+          {% for e in extensions %}
+            <option value="{{ e }}" {% if e == ext %}selected{% endif %}>.{{ e }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        <span>Modified From</span>
+        <input type="date" name="from" value="{{ date_from }}" />
+      </label>
+
+      <label>
+        <span>Modified To</span>
+        <input type="date" name="to" value="{{ date_to }}" />
+      </label>
+
+      <button type="submit">Apply Filters</button>
+      <a class="ghost" href="{{ url_for('index') }}">Reset</a>
+    </form>
+  </section>
+
+  <section class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Path</th>
+          <th>Description</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td class="muted">{{ item.rel_path }}</td>
+          <td>{{ item.description }}</td>
+          <td>{{ item.size }} bytes</td>
+          <td>{{ item.modified_str }}</td>
+          <td><a href="{{ url_for('download', rel_path=item.rel_path) }}">Download</a></td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="6" class="muted">No files found.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>

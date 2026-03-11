@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FTP Files</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <h1>Uploaded Files</h1>
+    <a class="ghost" href="{{ url_for('logout') }}">Logout</a>
+  </header>
+
+  <section class="uploader">
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <label>
+        <span>Select File</span>
+        <input type="file" name="file" required />
+      </label>
+      <label>
+        <span>Description (optional)</span>
+        <input name="description" placeholder="What is this file for?" />
+      </label>
+      <button type="submit">Upload</button>
+    </form>
+  </section>
+
+  <section class="filters">
+    <form method="get" class="form-grid">
+      <label>
+        <span>Search</span>
+        <input name="q" placeholder="Search by name, path, or description" value="{{ q }}" />
+      </label>
+
+      <label>
+        <span>Extension</span>
+        <select name="ext">
+          <option value="">All</option>
+          {% for e in extensions %}
+            <option value="{{ e }}" {% if e == ext %}selected{% endif %}>.{{ e }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        <span>Modified From</span>
+        <input type="date" name="from" value="{{ date_from }}" />
+      </label>
+
+      <label>
+        <span>Modified To</span>
+        <input type="date" name="to" value="{{ date_to }}" />
+      </label>
+
+      <button type="submit">Apply Filters</button>
+      <a class="ghost" href="{{ url_for('index') }}">Reset</a>
+    </form>
+  </section>
+
+  <section class="table-wrap">
+    <form method="post" action="{{ url_for('bulk_action') }}" class="bulk-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <div class="bulk-actions">
+        <label class="select-all">
+          <input type="checkbox" id="select-all" />
+          <span>Select all</span>
+        </label>
+        <div class="bulk-buttons">
+          <button type="submit" name="action" value="download">Download Selected</button>
+          <button type="submit" name="action" value="delete" class="danger">Delete Selected</button>
+        </div>
+      </div>
+      <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>File</th>
+          <th>Path</th>
+          <th>Description</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td>
+            <input type="checkbox" name="selected" value="{{ item.rel_path }}" class="row-check" />
+          </td>
+          <td>{{ item.name }}</td>
+          <td class="muted">{{ item.rel_path }}</td>
+          <td>{{ item.description }}</td>
+          <td>{{ item.size }} bytes</td>
+          <td>{{ item.modified_str }}</td>
+          <td><a href="{{ url_for('download', rel_path=item.rel_path) }}">Download</a></td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7" class="muted">No files found.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      </table>
+    </form>
+  </section>
+
+  <script>
+    const selectAll = document.getElementById("select-all");
+    const rowChecks = Array.from(document.querySelectorAll(".row-check"));
+    const bulkForm = document.querySelector(".bulk-form");
+
+    if (selectAll) {
+      selectAll.addEventListener("change", () => {
+        rowChecks.forEach((box) => { box.checked = selectAll.checked; });
+      });
+    }
+
+    if (bulkForm) {
+      bulkForm.addEventListener("submit", (event) => {
+        const submitter = event.submitter;
+        const action = submitter ? submitter.value : "";
+        if (action !== "delete") {
+          return;
+        }
+        const selectedCount = rowChecks.filter((box) => box.checked).length;
+        if (selectedCount === 0) {
+          return;
+        }
+        const ok = window.confirm(`Delete ${selectedCount} selected file(s)? This cannot be undone.`);
+        if (!ok) {
+          event.preventDefault();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

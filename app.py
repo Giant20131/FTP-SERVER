@@ -358,21 +358,28 @@ def upload():
     if not validate_csrf(request.form):
         return abort(400)
 
-    file = request.files.get("file")
-    if not file or not file.filename:
-        return redirect(url_for("index"))
+    files = request.files.getlist("files")
 
-    filename = secure_filename(file.filename)
-    if not filename:
+    if not files:
         return redirect(url_for("index"))
 
     description = (request.form.get("description") or "").strip()
-    target = unique_file_path(filename)
-    file.save(target)
 
-    rel_path = target.relative_to(UPLOAD_DIR).as_posix()
-    if description:
-        set_description(rel_path, description)
+    for file in files:
+        if not file or not file.filename:
+            continue
+
+        filename = secure_filename(file.filename)
+        if not filename:
+            continue
+
+        target = unique_file_path(filename)
+        file.save(target)
+
+        rel_path = target.relative_to(UPLOAD_DIR).as_posix()
+
+        if description:
+            set_description(rel_path, description)
 
     return redirect(url_for("index"))
 
